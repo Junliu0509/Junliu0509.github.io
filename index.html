@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人員名冊</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+
+        .container {
+            max-width: 768px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            padding: 1rem;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header:active {
+            background-color: #f8f9fa;
+        }
+
+        .card-info {
+            flex: 1;
+        }
+
+        .card-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-meta {
+            font-size: 0.875rem;
+            color: #7f8c8d;
+        }
+
+        .card-meta span {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .card-title {
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        .toggle-icon {
+            font-size: 1.5rem;
+            color: #95a5a6;
+            transition: transform 0.3s;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .card-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .card-body.expanded {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1rem;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .detail-value {
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            padding-left: 0.5rem;
+            border-left: 3px solid #3498db;
+            white-space: pre-line;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #95a5a6;
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            .card-name {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🏢 人員名冊</h1>
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="搜尋姓名或部門..."
+                autocomplete="off"
+            >
+        </div>
+    </header>
+
+    <main class="container" id="staffContainer">
+        <!-- 卡片將由 JavaScript 動態生成 -->
+    </main>
+
+    <script>
+        // ==========================================
+        // 資料區域 - 實際人員資料
+        // ==========================================
+        
+        const staffData = [
+            {
+                company: "CS",
+                department: "資訊發展部",
+                title: "技術主任",
+                name: "沈智揚",
+                resume: "工程師 10個月\n系統工程師5年\n網管主管11個月\n專案經理5年9個月",
+                introduction: "具備資訊系統與技術管理背景，專長涵蓋系統開發與維運、技術流程規劃、跨部門溝通整合與專案推動，並曾參與並通過ISO相關管理與技術認證，熟悉制度化流程與資訊安全規範。",
+                supervisor: "Jimmy",
+                achievement: "資安專門負責人員(ISO 27001/27017/27018)、戰鬥小組簡報組(講師)，活躍"
+            },
+            {
+                company: "CK",
+                department: "客服處-三課-蝦皮專案",
+                title: "客服主任",
+                name: "簡妤璇",
+                resume: "電話行銷專員 1年8個月\n客服部副理（組長） 6年6個月",
+                introduction: "具備多年客服與客服管理經驗，專長涵蓋客服團隊管理、KPI指標控管（AHT、FCR、CSAT）、流程優化、客訴與危機處理及跨部門溝通協作。具備新人培訓與教育訓練規劃能力，能以數據分析驅動團隊效能提升，穩定提升服務品質、客戶滿意度與續約表現。",
+                supervisor: "Linda",
+                achievement: "學習能力佳，雖然制度面事項繁多需要說明，但經指導後，Sherry皆能確實記住並落實，不會重複詢問相同問題。\n面對蝦皮窗口較具挑戰性的提問，每週會議報告表現明顯進步，已能從原先緊張、語塞，逐步掌握問題重點並回應到位。"
+            },
+            {
+                company: "CS",
+                department: "行銷營運部",
+                title: "高級行銷企劃專員",
+                name: "林珮婷",
+                resume: "美術設計 2年11個月\n電商營運與美編設計 2年11個月\n數位行銷企劃專員 8年1個月",
+                introduction: "具備多年數位行銷與視覺設計實務經驗，熟悉廣告投放、SEO、內容行銷與社群平台經營，能操作 Google Ads、Google Analytics 等工具，並獨立完成文案、行銷素材與基礎影音製作。",
+                supervisor: "Vincent",
+                achievement: "主動思考能力待加強，能夠按部就班的完成事項，但品質及目標掌握不足。須有足夠經驗的人手把手看著。"
+            },
+            {
+                company: "CS",
+                department: "客服處-一課-郵局專案",
+                title: "客服主任",
+                name: "游閔惠",
+                resume: "客服人員 5年3個月\n客服主管 3年3個月\n專案負責人 3年1個月\n產品開發副理 9年2個月\n業務副理4個月\n活動企劃經理1年4個月",
+                introduction: "具備17年以上客服與管理相關經驗，專長涵蓋客服團隊管理、客戶服務流程優化、專案支援、跨部門溝通協調及第一線客訴處理。曾於大型客服中心與多元產業擔任客服主管與專案角色，具備帶領團隊、穩定服務品質及應對高量能案件的能力，並熟悉客服系統與日常管理工具，能確保專案服務穩定運作。",
+                supervisor: "陳惠玲",
+                achievement: "是個樂觀開朗的人,不論遇到什麼考驗，也仍樂觀面對只給自己三滴淚的時間來收拾好情緒，正面思考的態度也影響了前廠商留任下來的同事,時常關心同事予以支援,在半年內的時間,讓他們從觀望到信任, 足見閔惠所付出的努力得到肯定。"
+            },
+            {
+                company: "CS",
+                department: "客服二部-客服經理",
+                title: "經理",
+                name: "游璧碩",
+                resume: "人力資源主管 5年4個月\n行政管理部/門市營業處經理 4年5個月\n人力資源部門副理 6年8個月",
+                introduction: "具備12年以上人力資源與管理職經驗，專長涵蓋人力資源制度建置、績效與薪酬管理、教育訓練與人才發展、員工關係及跨部門整合。曾擔任大型企業人資部門最高主管，熟悉組織調整、制度優化與專案推動，並具備ISO文件管理與內控制度建置經驗，能有效支援組織穩定發展並提升整體營運效能。",
+                supervisor: "Hetty",
+                achievement: "高鐵新案，連續三週周間及假日加班，協助釐清『客製化報表需求與ECP系統、交換機數據』間的數據差異，協調資訊服務部開發進度，不斷驗證報表數據，協助高鐵新約度過瓶頸，拋夫棄子投入專案，避免罰款風險。\n\n續接普發案，在沒有大型任務型專案經驗下，快速簡化招募流程，以集體面試在最短時間招募90%人力，梳理幹部權責分工，讓普發案順利營運。\n\n近期投入一站式搬遷及非專整併策劃。\n\n自 3 月加入公司以來，Ariel 展現了極高的適應力與學習速度，短時間內便融入客服團隊的運作節奏，並在多項重要專案中表現亮眼。她不僅能快速掌握流程，具備公司治理的經驗，更能主動提出改善建議，展現出高度潛力與可塑性，是本年度最具代表性的優秀主管新血。"
+            },
+            {
+                company: "CS",
+                department: "人資行銷部-教育訓練課",
+                title: "人資主任",
+                name: "白國均",
+                resume: "人力資源部-資深專員 2年4個月\n教育訓練室-高級專員 9個月",
+                introduction: "具備人力資源與教育訓練實務經驗，專長涵蓋教育訓練規劃與執行、招募甄選、人資制度與流程優化、績效制度協助及人力數據分析。曾參與學習地圖、職能建置與人資專案推動，並熟悉薪資、保險、出勤及人事系統作業，能以數據與制度思維協助組織穩定發展與人才培育。",
+                supervisor: "Jenny",
+                achievement: "【優秀事蹟】\nRobin剛加入人資行銷部時，整體表現較為安靜與被動，工作執行多以完成交辦事項為主，前三個月期間較難感受到其主動性與創意發揮，新人報告的整體表現亦以符合基本標準為主。\n隨著對業務逐漸熟悉後，可明顯觀察到Robin的成長與轉變，開始展現主動投入的態度，在各項工作規劃中亦能積極參與討論，並提出具體的優化建議與創意做法。\n2025年Robin的工作重點以企劃並推動「輔導員計畫」作為主要亮眼的工作表現，對營運團隊與新人培育均有實質貢獻。期望 2026 年能進一步結合其自身專業與累積的實務經驗，協助公司推動TTQS申請及人提計畫補助等相關事宜，擴大其影響力與專業價值。\n\n【可能需要老大特別注意的事項】\n目前觀察到承接任務比較無法立即想到使用AI工具或提升效率的方式，希望明年透過AI內訓能激活更多引用情境"
+            },
+            {
+                company: "CS",
+                department: "管理部",
+                title: "行政專員",
+                name: "王教權",
+                resume: "應屆畢業生",
+                introduction: "具備基礎行政與門市服務經驗，專長涵蓋文書處理、資料建檔、文件歸檔、用品採購協助及櫃檯接待與顧客服務。具備良好溝通能力與服務態度，做事有計畫、學習速度快，熟悉 Word、Excel、PowerPoint 等辦公室工具，能穩定支援行政與後勤作業。",
+                supervisor: "筌凱",
+                achievement: "工作態度熱情活潑、主動積極，可以準時完成交辦事項。\n近期協助航空城堡\n1.床墊和床架搬運\n2.鋪床單&枕頭套"
+            },
+            {
+                company: "CS",
+                department: "資訊發展部(開發組)",
+                title: "軟體設計工程師",
+                name: "謝絮如",
+                resume: "資訊專案工程師 1年4個月\n工程師助理 3個月",
+                introduction: "具備資訊與專案實務背景，專長涵蓋IT系統支援、帳號與環境建置、基礎系統與網路管理、需求分析與專案文件撰寫。熟悉 Linux、SQL、API與基礎程式概念，並通過ISO 27001等相關認證，具良好學習力與跨部門溝通能力，能配合團隊進行系統維運與技術成長。",
+                supervisor: "Jimmy",
+                achievement: "招募系統負責人員、普發一萬WB、管科會升級案，安靜、少話、簡潔"
+            },
+            {
+                company: "UU",
+                department: "UU-業務部",
+                title: "助理",
+                name: "陳靖潔",
+                resume: "業助 8個月",
+                introduction: "具備業務助理與行政後勤實務經驗，專長涵蓋訂單處理、ERP進銷存、出貨排程、對帳與行政支援作業。熟悉文書與系統操作，做事細心負責，具良好溝通與協調能力，能穩定支援業務與營運流程。",
+                supervisor: "Stanley",
+                achievement: "【優秀事蹟】\n1.自到職以來，對於接手部門後勤行政事務上手很快，也很細心負責。\n2.在Fastbot專案上盡心盡力，除了50家安裝數的追蹤與名單統整，也積極參與技術端的協作事宜。\n3.在課程推廣上也發揮細心、積極的一面，協助業務們在開發期間有很好的後勤支援，是值得信賴的夥伴。\n【可能需要老大特別注意的事項】\n靖潔未來除了想朝專職業務的方向發展之外，也對於擔任AI課程講師有極大的興趣，因此接下來在參與辦課的同時，也會邊學習AI相關知識，往講師的方向邁進。"
+            },
+            {
+                company: "CS",
+                department: "業務部",
+                title: "助理",
+                name: "劉慧美",
+                resume: "應屆畢業生",
+                introduction: "",
+                supervisor: "Grace",
+                achievement: "新鮮人 稍愛抱怨\n剛好q4業務非常忙，有可能成為 擴大抱怨、造成不佳工作氣氛的隱憂\n回報工作的習慣可再強化"
+            },
+            {
+                company: "CS",
+                department: "行銷營運部",
+                title: "行銷主任",
+                name: "蕭順洋",
+                resume: "專案助理1 年 1 個月\n公關助理 1 年 1 個月\n業務員 2 年 10 個月\n專案組 專員 5 年 7 個月\n公關部/業務部經理1 年 5 個月",
+                introduction: "具備十年以上公關、行銷與專案管理經驗，專長涵蓋品牌公關策略、媒體關係經營、公部門與企業專案執行、標案企劃與簡報提案、活動規劃及跨部門整合。曾帶領團隊達成年度業績目標，並負責大型品牌與公部門專案，具成熟溝通協調與管理能力，能穩定推動品牌與行銷成果。",
+                supervisor: "大莉",
+                achievement: "【整體評價】該員具備良好的公關社交手腕與媒體業務經驗，在人際互動與口語應對上展現優勢，但實際執行力與履歷職能有明顯落差，行政組織能力也較弱，不過在課程簡報方面因為對焦各講師處理簡報，已從AI小白，進階到能設計各種產業機器人。\n目前該員在工作上大部分仍缺乏獨立作業能力，需主管投入大量時間進行微觀管理，整體管理成本偏高。\n【優勢】業務公關能力不錯：具備媒體與業務背景，擅長察言觀色，對外溝通與人際應對得體，適合高頻率人際互動的職務內容。\n【待改善與風險評估】\n1.執行力與獨立性不足：實務操作能力未達預期，處理行政任務時較缺乏邏輯與獨立性，傾向「一個指令一個動作」，對於具時效性的任務，需主管高密度監督與明確拆解步驟（類似保母式管理。\n2.主動回報機制薄弱：缺乏風險控管意識，遇到執行阻礙或變數時鮮少主動預警，往往需待主管查核時才發現問題，經常錯失解決問題的黃金時間。\n3.任務排序與時程觀念模糊：對於輕重緩急的判斷力較弱，常無法依緊急程度正確排序工作，極易導致進度延遲。\n4.穩定性與抗壓性：個性較為敏感，且健康狀況不穩定，突發性的病假頻率較高，易影響工作連續性與團隊人力調度。"
+            },
+            {
+                company: "CS",
+                department: "行銷營運部-專案二課",
+                title: "高級行銷企劃專員",
+                name: "洪子晴",
+                resume: "平面設計 / 門市店長 2年10個月\n行銷企劃 / 視覺設計 1年\n行銷企劃 / 專案管理 10個月\n專案管理 / 行銷企劃 / 平面設計 4個月",
+                introduction: "具備4–5年行銷企劃與專案管理實務經驗，專長涵蓋品牌行銷策略規劃、社群媒體經營、內容與視覺企劃、行銷活動執行及跨部門專案整合。熟悉電商平台操作、KOC 合作、成效數據分析與時程控管，能從市場分析、策略發想到執行落地，穩定推動行銷專案並提升品牌曝光與互動成效。",
+                supervisor: "Vincent",
+                achievement: "到職後，迅速理解程曦網站架構，優化AI seo網站架構，並且提出內容以及UI改善建議。\n各項專案上手快速，能夠很好理解過往執行內容，並且提出優化建議的方向。"
+            },
+            {
+                company: "CS",
+                department: "行銷營運部-專案二課",
+                title: "行銷企劃專員",
+                name: "柯香君",
+                resume: "行銷實習生 1年",
+                introduction: "具備社群行銷實務經驗，擅長貼文企劃、Reels 短影音製作與素材設計，熟悉數據觀察與推播操作，能有效提升品牌曝光與會員活躍度。",
+                supervisor: "Vincent",
+                achievement: "缺乏經驗，專案執行上需有經驗的人帶著。"
+            },
+            {
+                company: "CS",
+                department: "資訊發展部",
+                title: "軟體設計工程師",
+                name: "陳筠臻",
+                resume: "應屆畢業生\n網頁設計人員 11 個月",
+                introduction: "熟悉ASP.NET、C#、MVC架構、HTML、CSS、JavaScript與SQL Server。曾於銀行資訊部門參與內部系統開發與維護，包含前後端程式撰寫、資料庫操作及系統畫面轉換。",
+                supervisor: "Jimmy",
+                achievement: "普發一萬 財金介接、管科會升級案、建立部門自學課程，較為害羞"
+            },
+            {
+                company: "CS",
+                department: "行銷營運部-專案二課",
+                title: "行銷企劃專員",
+                name: "謝濱群",
+                resume: "應屆畢業生\n營業企劃人員 5個月",
+                introduction: "具備行銷企劃與廣告文案實務經驗，曾參與檔期活動規劃與成效追蹤、影片腳本撰寫、拍攝與剪輯，以及社群平台維護管理。熟悉Adobe影像與設計工具，具備多媒體製作、文書排版與簡報製作經驗。",
+                supervisor: "Vincent",
+                achievement: "第一份工作，對於職場上以及自己的專業職能目標較不清楚。"
+            }
+        ];
+
+        // ==========================================
+        // 主要功能實作
+        // ==========================================
+
+        let allStaff = staffData;
+
+        // 渲染人員卡片
+        function renderStaffCards(data) {
+            const container = document.getElementById('staffContainer');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <p>找不到符合的人員資料</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.map((staff, index) => `
+                <div class="card">
+                    <div class="card-header" onclick="toggleCard(${index})">
+                        <div class="card-info">
+                            <div class="card-name">${staff.name}</div>
+                            <div class="card-meta">
+                                <span class="card-title">${staff.title}</span>
+                                <span>｜</span>
+                                <span>${staff.department}</span>
+                            </div>
+                        </div>
+                        <div class="toggle-icon" id="icon-${index}">▼</div>
+                    </div>
+                    <div class="card-body" id="body-${index}">
+                        <div class="card-content">
+                            ${staff.resume ? `
+                            <div class="detail-section">
+                                <div class="detail-label">📋 簡歷</div>
+                                <div class="detail-value">${staff.resume}</div>
+                            </div>` : ''}
+                            ${staff.introduction ? `
+                            <div class="detail-section">
+                                <div class="detail-label">💡 介紹</div>
+                                <div class="detail-value">${staff.introduction}</div>
+                            </div>` : ''}
+                            <div class="detail-section">
+                                <div class="detail-label">👤 直屬主管</div>
+                                <div class="detail-value">${staff.supervisor}</div>
+                            </div>
+                            <div class="detail-section">
+                                <div class="detail-label">⭐ 主管評語</div>
+                                <div class="detail-value">${staff.achievement}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切換卡片展開/收合
+        function toggleCard(index) {
+            const body = document.getElementById(`body-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            
+            body.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+
+        // 搜尋功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                renderStaffCards(allStaff);
+                return;
+            }
+
+            const filteredData = allStaff.filter(staff => {
+                return staff.name.toLowerCase().includes(searchTerm) ||
+                       staff.department.toLowerCase().includes(searchTerm);
+            });
+
+            renderStaffCards(filteredData);
+        });
+
+        // 初始化渲染
+        renderStaffCards(allStaff);
+    </script>
+</body>
+</html>
